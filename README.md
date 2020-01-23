@@ -1,8 +1,4 @@
-# Crummy
-
-[![Gem Version](https://badge.fury.io/rb/crummy.png)](http://badge.fury.io/rb/crummy)
-[![Build Status](https://secure.travis-ci.org/zachinglis/crummy.png)](http://travis-ci.org/zachinglis/crummy)
-[![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/zachinglis/crummy)
+# Crummy with Schema.org support
 
 Crummy is a simple and tasty way to add breadcrumbs to your Rails applications.
 
@@ -11,7 +7,7 @@ Crummy is a simple and tasty way to add breadcrumbs to your Rails applications.
 Simply add the dependency to your Gemfile:
 
 ```ruby
-gem "crummy", "~> 1.8.0"
+gem "crummy-schema-dot-org", "~> 1.9.0"
 ```
 
 # Example
@@ -180,7 +176,7 @@ See `lib/crummy.rb` for a list of these parameters and their defaults.
 ```ruby
 add_crumb support_link, {:right_side => true, :links => "/support", : li_class => "my_class", :li_right_class => "pull-right hidden-phone"}
 ```
-Simple add that parameter to options hash. 
+Simple add that parameter to options hash.
 
 
 ## Live example application
