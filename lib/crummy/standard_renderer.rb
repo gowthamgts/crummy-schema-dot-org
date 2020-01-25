@@ -42,24 +42,38 @@ module Crummy
       options[:last_crumb_linked] = Crummy.configuration.last_crumb_linked if options[:last_crumb_linked].nil?
       options[:right_side] ||= Crummy.configuration.right_side
 
-      last_hash = lambda {|o|k=o.map{|c|
-                                      c.is_a?(Hash) ? (c.empty? ? nil: c) : nil}.compact
-                                      k.empty? ? {} : k.last
-                                    }
-      local_global = lambda {|crumb, global_options, param_name| last_hash.call(crumb).has_key?(param_name.to_sym) ? last_hash.call(crumb)[param_name.to_sym] : global_options[param_name.to_sym]}
+      last_hash = lambda { |o|
+        k = o.map { |c|
+          if c.is_a?(Hash)
+            c.empty? ? nil : c
+          else
+            nil
+          end
+        }.compact
+        k.empty? ? {} : k.last
+      }
+      local_global = lambda { |crumb, global_options, param_name|
+        last_hash.call(crumb).has_key?(param_name.to_sym) ? last_hash.call(crumb)[param_name.to_sym] : global_options[param_name.to_sym]
+      }
 
       case options[:format]
       when :html
-        crumb_string = crumbs.map{|crumb|local_global.call(crumb, options, :right_side) ? nil :
-                        crumb_to_html(crumb,
-                                      local_global.call(crumb, options, :links),
-                                      local_global.call(crumb, options, :first_class),
-                                      local_global.call(crumb, options, :last_class),
-                                      (crumb == crumbs.first),
-                                      (crumb == crumbs.last),
-                                      local_global.call(crumb, options, :last_crumb_linked),
-                                      local_global.call(crumb, options, :truncate))}.compact.join(options[:separator]).html_safe
-        crumb_string
+        crumb_string = crumbs.map { |crumb|
+          local_global.call(crumb, options, :right_side) ? nil :
+              crumb_to_html(crumb,
+                            local_global.call(crumb, options, :links),
+                            local_global.call(crumb, options, :first_class),
+                            local_global.call(crumb, options, :last_class),
+                            (crumb == crumbs.first),
+                            (crumb == crumbs.last),
+                            local_global.call(crumb, options, :microdata),
+                            crumbs.find_index(crumb) + 1,
+                            local_global.call(crumb, options, :last_crumb_linked),
+                            local_global.call(crumb, options, :truncate))
+        }.compact.join(options[:separator]).html_safe
+
+        parent_div_options = {:itemscope => true, :itemtype => data_definition_url("BreadcrumbList")}
+        crumb_string = content_tag(:div, crumb_string, parent_div_options)
       when :html_list
         # Let's set values for special options of html_list format
         options[:li_class] ||= Crummy.configuration.li_class
@@ -67,50 +81,53 @@ module Crummy
         options[:ol_id] ||= Crummy.configuration.ol_id
         options[:ol_id] = nil if options[:ol_id].blank?
 
-        crumb_string = crumbs.map{|crumb|local_global.call(crumb, options, :right_side) ? nil :
-                        crumb_to_html_list(crumb,
-                                           local_global.call(crumb, options, :links),
-                                           local_global.call(crumb, options, :li_class),
-                                           local_global.call(crumb, options, :first_class),
-                                           local_global.call(crumb, options, :last_class),
-                                           (crumb == crumbs.first),
-                                           (crumb == crumbs.find_all{|crumb|
-                                                    !last_hash.call(crumb).fetch(:right_side,false)}.compact.last),
-                                           local_global.call(crumb, options, :microdata),
-                                           crumbs.find_index(crumb) + 1,
-                                           local_global.call(crumb, options, :last_crumb_linked),
-                                           local_global.call(crumb, options, :truncate),
-                                           local_global.call(crumb, options, :separator))}.compact.join.html_safe
-        crumb_right_string = crumbs.reverse.map{|crumb|!local_global.call(crumb, options, :right_side) ? nil :
-
-                        crumb_to_html_list(crumb,
-                                           local_global.call(crumb, options, :links),
-                                           local_global.call(crumb, options, :li_right_class),
-                                           local_global.call(crumb, options, :first_class),
-                                           local_global.call(crumb, options, :last_class),
-                                           (crumb == crumbs.first),
-                                           (crumb == crumbs.find_all{|crumb|!local_global.call(crumb, options, :right_side)}.compact.last),
-                                           local_global.call(crumb, options, :microdata),
-                                           crumbs.find_index(crumb) + 1,
-                                           local_global.call(crumb, options, :last_crumb_linked),
-                                           local_global.call(crumb, options, :truncate),
-                                           local_global.call(crumb, options, :right_separator))}.compact.join.html_safe
+        crumb_string = crumbs.map { |crumb|
+          local_global.call(crumb, options, :right_side) ? nil :
+              crumb_to_html_list(crumb,
+                                 local_global.call(crumb, options, :links),
+                                 local_global.call(crumb, options, :li_class),
+                                 local_global.call(crumb, options, :first_class),
+                                 local_global.call(crumb, options, :last_class),
+                                 (crumb == crumbs.first),
+                                 (crumb == crumbs.find_all { |crumb|
+                                   !last_hash.call(crumb).fetch(:right_side, false) }.compact.last),
+                                 local_global.call(crumb, options, :microdata),
+                                 crumbs.find_index(crumb) + 1,
+                                 local_global.call(crumb, options, :last_crumb_linked),
+                                 local_global.call(crumb, options, :truncate),
+                                 local_global.call(crumb, options, :separator))
+        }.compact.join.html_safe
+        crumb_right_string = crumbs.reverse.map { |crumb|
+          !local_global.call(crumb, options, :right_side) ? nil :
+              crumb_to_html_list(crumb,
+                                 local_global.call(crumb, options, :links),
+                                 local_global.call(crumb, options, :li_right_class),
+                                 local_global.call(crumb, options, :first_class),
+                                 local_global.call(crumb, options, :last_class),
+                                 (crumb == crumbs.first),
+                                 (crumb == crumbs.find_all { |crumb| !local_global.call(crumb, options, :right_side) }.compact.last),
+                                 local_global.call(crumb, options, :microdata),
+                                 crumbs.find_index(crumb) + 1,
+                                 local_global.call(crumb, options, :last_crumb_linked),
+                                 local_global.call(crumb, options, :truncate),
+                                 local_global.call(crumb, options, :right_separator))
+        }.compact.join.html_safe
         ol_options = {}
-        ol_options[:class]  = options[:ol_class]
-        ol_options[:id]     = options[:ol_id]
+        ol_options[:class] = options[:ol_class]
+        ol_options[:id] = options[:ol_id]
         if options[:microdata]
           ol_options[:itemscope] = true
-          ol_options[:itemtype]  = data_definition_url("BreadcrumbList")
+          ol_options[:itemtype] = data_definition_url("BreadcrumbList")
         end
-        crumb_string = content_tag(:ol, crumb_string+crumb_right_string, ol_options)
+        crumb_string = content_tag(:ol, crumb_string + crumb_right_string, ol_options)
         crumb_string
       when :xml
         crumbs.collect do |crumb|
           crumb_to_xml(crumb,
-                      local_global.call(crumb, options, :links),
-                      local_global.call(crumb, options, :separator),
-                      (crumb == crumbs.first),
-                      (crumb == crumbs.last))
+                       local_global.call(crumb, options, :links),
+                       local_global.call(crumb, options, :separator),
+                       (crumb == crumbs.first),
+                       (crumb == crumbs.last))
         end * ''
       else
         raise ArgumentError, "Unknown breadcrumb output format"
@@ -119,7 +136,7 @@ module Crummy
 
     private
 
-    def crumb_to_html(crumb, links, first_class, last_class, is_first, is_last, last_crumb_linked, truncate)
+    def crumb_to_html(crumb, links, first_class, last_class, is_first, is_last, with_microdata, position, last_crumb_linked, truncate)
       html_classes = []
       html_classes << first_class if is_first
       html_classes << last_class if is_last
@@ -128,14 +145,23 @@ module Crummy
       can_link = url && links && (!is_last || last_crumb_linked)
       link_html_options = options[:link_html_options] || {}
       link_html_options[:class] = html_classes
-      if can_link
-        link_to((truncate.present? ? name.truncate(truncate) : name), url, link_html_options)
+      if with_microdata
+        html_options = {:itemscope => true, :itemtype => data_definition_url("ListItem"), :itemprop => "itemListElement"}
+        item_title = content_tag(:span, (truncate.present? ? name.truncate(truncate) : name), :itemprop => "name")
+        link_html_options[:itemprop] = "item"
+        html_content = can_link ? link_to(item_title, url, link_html_options) : item_title
+        html_content << tag(:meta, :itemprop => "position", :content => position)
+        content_tag(:div, html_content, html_options)
       else
-        truncate.present? ? name.truncate(truncate) : name
+        if can_link
+          link_to((truncate.present? ? name.truncate(truncate) : name), url, link_html_options)
+        else
+          truncate.present? ? name.truncate(truncate) : name
+        end
       end
     end
 
-    def crumb_to_html_list(crumb, links, li_class, first_class, last_class, is_first, is_last, with_microdata, position, last_crumb_linked, truncate, separator='')
+    def crumb_to_html_list(crumb, links, li_class, first_class, last_class, is_first, is_last, with_microdata, position, last_crumb_linked, truncate, separator = '')
       name, url, options = crumb
       options = {} unless options.is_a?(Hash)
       can_link = url && links && (!is_last || last_crumb_linked) && !(/<\/a/ =~ name)
@@ -147,8 +173,8 @@ module Crummy
 
       if with_microdata
         html_options[:itemscope] = true
-        html_options[:itemtype]  = data_definition_url("ListItem")
-        html_options[:itemprop]  = "itemListElement"
+        html_options[:itemtype] = data_definition_url("ListItem")
+        html_options[:itemprop] = "itemListElement"
         item_title = content_tag(:span, (truncate.present? ? name.truncate(truncate) : name), :itemprop => "name")
         link_html_options = options[:link_html_options] || {}
         link_html_options[:itemprop] = "item"
@@ -157,8 +183,8 @@ module Crummy
       else
         html_content = can_link ? link_to((truncate.present? ? name.truncate(truncate) : name), url, options[:link_html_options]) : content_tag(:span, (truncate.present? ? name.truncate(truncate) : name))
       end
-      content_tag(:li, html_content, html_options)+(/<\/li/ =~ separator ?
-                                        separator : content_tag(:li, separator) unless separator.blank? || is_last)
+      content_tag(:li, html_content, html_options) + (/<\/li/ =~ separator ?
+                                                          separator : content_tag(:li, separator) unless separator.blank? || is_last)
     end
 
     def crumb_to_xml(crumb, links, separator, is_first, is_last)
