@@ -3,22 +3,22 @@ $:.push File.expand_path("../lib", __FILE__)
 require "crummy/version"
 
 Gem::Specification.new do |s|
-  s.name = "crummy-schema-dot-org"
+  s.name = "crummy"
   s.version = Crummy::VERSION
   s.platform    = Gem::Platform::RUBY
   s.licenses    = ['MIT']
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Zach Inglis", "Andrew Nesbitt", "Gowtham Gts"]
+  s.authors = ["Zach Inglis", "Andrew Nesbitt"]
   s.summary = "Tasty breadcrumbs!"
-  s.description = "Crummy Schema.org is an extension to original crummy gem supporting schema.org type"
-  s.email = "gts+crummy@gowtham.dev"
+  s.description = "Crummy is a simple and tasty way to add breadcrumbs to your Rails applications."
+  s.email = "zach+crummy@londonmade.co.uk"
   s.extra_rdoc_files = ["README.md"]
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 
-  s.homepage = "http://github.com/gowthamgts/crummy-schema-dot-org"
+  s.homepage = "http://github.com/zachinglis/crummy"
   s.require_paths = [%q{lib}]
   s.rubygems_version = %q{1.8.8}
 
